@@ -13,7 +13,7 @@ st.set_page_config(
 # Declare some useful functions.
 
 @st.cache_data
-def get_gdp_data():
+def data():
     """Grab GDP data from a CSV file.
 
     This uses caching to avoid having to read the file every time. If we were
@@ -22,11 +22,11 @@ def get_gdp_data():
     """
 
     # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/gdp_data.csv'
+    DATA_FILENAME = Path(__file__).parent/'data/apy.csv'
     raw_gdp_df = pd.read_csv(DATA_FILENAME)
 
-    MIN_YEAR = 1960
-    MAX_YEAR = 2022
+    MIN_YEAR = 1997
+    MAX_YEAR = 2015
 
     # The data above has columns like:
     # - Country Name
@@ -45,19 +45,19 @@ def get_gdp_data():
     # - GDP
     #
     # So let's pivot all those year-columns into two: Year and GDP
-    gdp_df = raw_gdp_df.melt(
-        ['Country Code'],
+    df = raw_gdp_df.melt(
+        ['State_Name'],
         [str(x) for x in range(MIN_YEAR, MAX_YEAR + 1)],
         'Year',
         'GDP',
     )
 
     # Convert years from string to integers
-    gdp_df['Year'] = pd.to_numeric(gdp_df['Year'])
+    df['Crop_Year'] = pd.to_numeric(df['Crop_Year'])
 
-    return gdp_df
+    return df
 
-gdp_df = get_gdp_data()
+df = data()
 
 # -----------------------------------------------------------------------------
 # Draw the actual page
@@ -75,8 +75,8 @@ But it's otherwise a great (and did I mention _free_?) source of data.
 ''
 ''
 
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
+min_value = df['Year'].min()
+max_value = df['Year'].max()
 
 from_year, to_year = st.slider(
     'Which years are you interested in?',
@@ -84,23 +84,30 @@ from_year, to_year = st.slider(
     max_value=max_value,
     value=[min_value, max_value])
 
-countries = gdp_df['Country Code'].unique()
+States = df['State_Name'].unique()
 
-if not len(countries):
+if not len(States):
     st.warning("Select at least one country")
 
 selected_countries = st.multiselect(
     'Which countries would you like to view?',
-    countries,
-    ['DEU', 'FRA', 'GBR', 'BRA', 'MEX', 'JPN'])
+    States,
+    ['Andaman and Nicobar Islands', 'Andhra Pradesh',
+       'Arunachal Pradesh', 'Assam', 'Bihar', 'Chandigarh',
+       'Chhattisgarh', 'Dadra and Nagar Haveli', 'Goa', 'Gujarat',
+       'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir ', 'Jharkhand',
+       'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+       'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry',
+       'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana ',
+       'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'])
 
 ''
 ''
 ''
 
 # Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
+filtered_df = df[
+    (df['Country Code'].isin(selected_countries))
     & (gdp_df['Year'] <= to_year)
     & (from_year <= gdp_df['Year'])
 ]
